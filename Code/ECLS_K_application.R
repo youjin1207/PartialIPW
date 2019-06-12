@@ -117,6 +117,10 @@ cluster_dat = center_scale(cluster_dat)
 cm = Cluster_Medoids(cluster_dat, clusters = 10, distance_metric = 'mahalanobis', 
                      swap_phase = TRUE)
 table(cm$clusters)
+proportion$class = cm$clusters; dummy = rep(NA, nrow(subdat))
+for(i in 1:nrow(proportion)){
+  dummy[subdat$S2_ID %in% proportion$S2_ID[i]] = proportion$class[i]
+}
 subdat$dummy = dummy
 pdf("Figure/region.pdf",  width = 12, height = 6)
 par(mfrow = c(1,1),   mar = c(7,7,5,5),  cex.lab = 2, 

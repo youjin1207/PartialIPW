@@ -90,7 +90,7 @@ data_obs_cluster = data.frame(h_index = 1:h_tot, Xbar = Xbar.tmp, V = V.h, U = U
 
 ## fully pooled propensity scores
 reg.pooled = glm(trt ~ Xbar + Xrel + V, data=data_obs, family=binomial)
-pooled.ps = fitted(reg.pooled)
+pooled.ps = predict(reg.pooled)
 pooled.ps = exp(pooled.ps)/(1+exp(pooled.ps))
 
 data_obs$pooled.ps = pooled.ps
