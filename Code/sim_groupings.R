@@ -60,7 +60,7 @@ ps_true = ps_true/0.7^-1 + 0.15
 trt = rbinom(n_tot, size=1, prob=ps_true)
 
 ## generate obs outcome
-trteffect_lin = kappa_h + Xbar*kappa1 + Xrel*kappa2 + V*kappa3 + (U-mean(U))*kappa4[m]
+trteffect_lin = kappa_h + Xbar*kappa1 + Xrel*kappa2 + V*kappa3 + (U-mean(U))^2*kappa4[m]
 err_y = rnorm(n_tot, mean=0, sd=1)
 y = trt*(trteffect_lin) + 
   beta_h + Xbar*beta1 + Xrel*beta2 + V*beta3 + (U-mean(U))*beta4[l] + err_y # Equation 19
@@ -103,7 +103,7 @@ for(d in 1:dummy.num){
   forktrt=(tmp.data$trt==1) 
   forkcon=(tmp.data$trt==0)
   if(sum(forktrt)!=0 & sum(forkcon)!=0){
-    tmp.reg = glm(trt ~ Xbar + Xrel + V, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(trt ~ Xbar + Xrel + V + (1|h_index), data = tmp.data, family=binomial(link="logit"))
     tmp.ps = predict(tmp.reg)
     tmp.ps = exp(tmp.ps)/(1+exp(tmp.ps))
     
@@ -123,7 +123,7 @@ for(d in 1:dummy.num){
       dum.index = which(data_obs_cluster$cluster.dummy == d)
       # proportion of the treated 
       delta_h_proportion[dum.index] =  data_obs_cluster$trt.prop[dum.index] - mean(tmp.data$trt)
-      lambda_h_proportion[dum.index] = n_h[dum.index]*(delta_h_proportion[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*kappa4[m] + 
+      lambda_h_proportion[dum.index] = n_h[dum.index]*(delta_h_proportion[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))^2*kappa4[m] + 
                                                   delta_h_proportion[dum.index]*(1/mean(tmp.data$trt) + 1/(1-mean(tmp.data$trt)))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*beta4[l])
       
     }
@@ -149,7 +149,7 @@ for(d in 1:dummy.num){
   forkcon=(tmp.data$trt==0) 
   
   if(sum(forktrt)!=0 & sum(forkcon)!=0){
-    tmp.reg = glm(trt ~ Xbar + Xrel + V, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(trt ~ Xbar + Xrel + V + (1|h_index), data = tmp.data, family=binomial(link="logit"))
     tmp.ps = predict(tmp.reg)
     tmp.ps = exp(tmp.ps)/(1+exp(tmp.ps))
     group.ps[data_obs$h_index %in% which(data_obs_cluster$cluster.dummy == d)] = tmp.ps
@@ -167,7 +167,7 @@ for(d in 1:dummy.num){
       dum.index = which(data_obs_cluster$cluster.dummy == d)
       # proportion of the treated 
       delta_h_both[dum.index] =  data_obs_cluster$trt.prop[dum.index] - mean(tmp.data$trt)
-      lambda_h_both[dum.index] = n_h[dum.index]*(delta_h_both[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*kappa4[m] + 
+      lambda_h_both[dum.index] = n_h[dum.index]*(delta_h_both[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))^2*kappa4[m] + 
                                                            delta_h_both[dum.index]*(1/mean(tmp.data$trt) + 1/(1-mean(tmp.data$trt)))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*beta4[l])
 
     }
@@ -194,7 +194,7 @@ for(d in 1:dummy.num){
   forkcon=(tmp.data$trt==0) 
   
   if(sum(forktrt)!=0 & sum(forkcon)!=0){
-    tmp.reg = glm(trt ~ Xbar + Xrel + V, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(trt ~ Xbar + Xrel + V + (1|h_index), data = tmp.data, family=binomial(link="logit"))
     tmp.ps = predict(tmp.reg)
     tmp.ps = exp(tmp.ps)/(1+exp(tmp.ps))
     
@@ -212,7 +212,7 @@ for(d in 1:dummy.num){
       dum.index = which(data_obs_cluster$cluster.dummy == d)
       # proportion of the treated 
       delta_h_cov[dum.index] =  data_obs_cluster$trt.prop[dum.index] - mean(tmp.data$trt)
-      lambda_h_cov[dum.index] = n_h[dum.index]*(delta_h_cov[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*kappa4[m] + 
+      lambda_h_cov[dum.index] = n_h[dum.index]*(delta_h_cov[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))^2*kappa4[m] + 
                                                            delta_h_cov[dum.index]*(1/mean(tmp.data$trt) + 1/(1-mean(tmp.data$trt)))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*beta4[l])
 
     }
@@ -236,7 +236,7 @@ for(d in 1:dummy.num){
   forkcon=(tmp.data$trt==0) 
   
   if(sum(forktrt)!=0 & sum(forkcon)!=0){
-    tmp.reg = glm(trt ~ Xbar + Xrel + V, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(trt ~ Xbar + Xrel + V + (1|h_index), data = tmp.data, family=binomial(link="logit"))
     tmp.ps = predict(tmp.reg)
     tmp.ps = exp(tmp.ps)/(1+exp(tmp.ps))
     group.ps[data_obs$h_index %in% which(data_obs_cluster$cluster.dummy == d)] = tmp.ps
@@ -254,7 +254,7 @@ for(d in 1:dummy.num){
       dum.index = which(data_obs_cluster$cluster.dummy == d)
       # proportion of the treated 
       delta_h_random[dum.index] =  data_obs_cluster$trt.prop[dum.index] - mean(tmp.data$trt)
-      lambda_h_random[dum.index] = n_h[dum.index]*(delta_h_random[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*kappa4[m] + 
+      lambda_h_random[dum.index] = n_h[dum.index]*(delta_h_random[dum.index]*(1/mean(tmp.data$trt))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))^2*kappa4[m] + 
                                                            delta_h_random[dum.index]*(1/mean(tmp.data$trt) + 1/(1-mean(tmp.data$trt)))*(data_obs_cluster$U[dum.index]-mean(data_obs_cluster$U))*beta4[l])
 
     }

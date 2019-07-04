@@ -59,7 +59,7 @@ ps_true = ps_true/0.7^-1 + 0.15
 trt = rbinom(n_tot, size=1, prob=ps_true)
 
 ## generate obs outcome
-trteffect_lin = kappa_h + Xbar*kappa1 + Xrel*kappa2 + V*kappa3 + (U-mean(U))*kappa4[m]
+trteffect_lin = kappa_h + Xbar*kappa1 + Xrel*kappa2 + V*kappa3 + (U-mean(U))^2*kappa4[m]
 err_y = rnorm(n_tot, mean=0, sd=1)
 y = trt*(trteffect_lin) + 
   beta_h + Xbar*beta1 + Xrel*beta2 + V*beta3 + (U-mean(U))*beta4[l] + err_y # Equation 19
@@ -89,7 +89,7 @@ data_obs_cluster = data.frame(h_index = 1:h_tot, Xbar = Xbar.tmp, V = V.h, U = U
 
 
 ## fully pooled propensity scores
-reg.pooled = glm(trt ~ Xbar + Xrel + V, data=data_obs, family=binomial)
+reg.pooled = glmer(trt ~ Xbar + Xrel + V + (1|h_index), data=data_obs, family=binomial)
 pooled.ps = predict(reg.pooled)
 pooled.ps = exp(pooled.ps)/(1+exp(pooled.ps))
 
@@ -134,7 +134,7 @@ for(d in 1:dummy.num){
                                               sum((1/(1-tmp.data$pooled.ps[forkcon]))^2)/(sum(1/(1-tmp.data$pooled.ps[forkcon])))^2)
     
     ## estimate partially pooled propensity scores
-    tmp.reg = glm(trt ~ Xbar + Xrel + V, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(trt ~ Xbar + Xrel + V + (1|h_index), data = tmp.data, family=binomial(link="logit"))
     tmp.ps = predict(tmp.reg)
     tmp.ps = exp(tmp.ps)/(1+exp(tmp.ps))
     data_obs$group.ps[data_obs$h_index %in% which(data_obs_cluster$cluster.dummy == d)] = tmp.ps         

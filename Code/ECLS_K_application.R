@@ -90,18 +90,18 @@ data.t$KURBAN_R = as.factor(data.t$KURBAN_R)
 formula_PS_Dong =  TREAT  ~ FEMALE + BLACK + HISPANIC + CREGION + 
   TWOPAR + FAMTYPE + BIOMATHER + 
   ENGLISHHOME + C1CMOTOR + C1HEIGHT + C1WEIGHT + R1_KAGE + 
-  WKSESL + P1HIG_1 + WKINCOME + KURBAN_R 
+  WKSESL + P1HIG_1 + WKINCOME + KURBAN_R
 
 # propensity score with three individual-level covariates omitted: WKSESL, P1HIG_1, WKINCOME
 formula_PS =  TREAT  ~ FEMALE + BLACK + HISPANIC + CREGION + 
   TWOPAR + FAMTYPE + BIOMATHER + 
   ENGLISHHOME + C1CMOTOR + C1HEIGHT + C1WEIGHT + R1_KAGE  + 
-  KURBAN_R 
+  KURBAN_R + (1|S2_ID)
 
 # propensity score without cluster-level covariates:  CREGION, KURBAN_R, WKSESL, P1HIG_1, WKINCOME
 formula_PS_noregion =  TREAT  ~ FEMALE + BLACK + HISPANIC +  
   TWOPAR + FAMTYPE + BIOMATHER + 
-  ENGLISHHOME + C1CMOTOR + C1HEIGHT + C1WEIGHT + R1_KAGE 
+  ENGLISHHOME + C1CMOTOR + C1HEIGHT + C1WEIGHT + R1_KAGE + (1|S2_ID)
 
 # consider clusters having at least one treated and control
 subindex = aggregate(TREAT ~ S2_ID, data = data.t, mean)$S2_ID[aggregate(TREAT ~ S2_ID, data = data.t, mean)$TREAT > 0 &
@@ -156,7 +156,7 @@ sigsq0 = var(subdat$C1R4MSCL[subdat$TREAT==0])
 se.noweight =  sqrt(sigsq1/sum(subdat$TREAT==1)) + sqrt(sigsq0/sum(subdat$TREAT==0))
 
 ## fully pooled propensity scores (with U)
-reg = glm(formula_PS, data = subdat, family=binomial(link="logit"))
+reg = glmer(formula_PS, data = subdat, family=binomial(link="logit"))
 ps = predict(reg)
 ps = exp(ps)/(1+exp(ps))
 forktrt=(subdat$TREAT==1) 
@@ -165,9 +165,12 @@ ate.pooled.pooled =  sum((1/ps[forktrt])*subdat$C1R4MSCL[forktrt])/sum(1/ps[fork
   sum((1/(1-ps[forkcon]))*subdat$C1R4MSCL[forkcon])/sum(1/(1-ps[forkcon]))
 poolweight = (subdat$TREAT == 1)/ps + (subdat$TREAT == 0)/(1-ps) 
 poolweight.subdat = svydesign(ids = ~ 1, data = subdat, weights = ~ poolweight)
+se.pooled.pooled = sqrt(sigsq1*sum((1/ps[subdat$TREAT==1])^2)/(sum(1/ps[subdat$TREAT==1]))^2 + 
+                          sigsq0*sum((1/ps[subdat$TREAT==0])^2)/(sum(1/ps[subdat$TREAT==0]))^2)
+
 
 ## fully pooled propensity scores (without U)
-reg = glm(formula_PS_noregion, data = subdat, family=binomial(link="logit"))
+reg = glmer(formula_PS_noregion, data = subdat, family=binomial(link="logit"))
 ps = predict(reg)
 ps = exp(ps)/(1+exp(ps))
 forktrt=(subdat$TREAT==1) 
@@ -176,6 +179,8 @@ ate.pooled.pooled.noregion =  sum((1/ps[forktrt])*subdat$C1R4MSCL[forktrt])/sum(
   sum((1/(1-ps[forkcon]))*subdat$C1R4MSCL[forkcon])/sum(1/(1-ps[forkcon]))     
 poolweight.noregion = (subdat$TREAT == 1)/ps + (subdat$TREAT == 0)/(1-ps) 
 poolweight.subdat.noregion = svydesign(ids = ~ 1, data = subdat, weights = ~ poolweight.noregion)
+se.pooled.pooled.noregion = sqrt(sigsq1*sum((1/ps[subdat$TREAT==1])^2)/(sum(1/ps[subdat$TREAT==1]))^2 + 
+                                   sigsq0*sum((1/ps[subdat$TREAT==0])^2)/(sum(1/ps[subdat$TREAT==0]))^2)
 
 
 ## partially pooled propensity scores (with U)
@@ -188,7 +193,7 @@ for(d in 1:dummy.num){
   forktrt=(tmp.data$TREAT==1) # index of treated individual within cluster
   forkcon=(tmp.data$TREAT==0) # index of control individual within cluster
   if(sum(forktrt)!=0 & sum(forkcon)!=0){
-    tmp.reg = glm(formula_PS, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(formula_PS, data = tmp.data, family=binomial(link="logit"))
     ps=predict(tmp.reg)
     ps=exp(ps)/(1+exp(ps))
     group.ps[subdat$dummy == d] = ps
@@ -217,7 +222,7 @@ for(d in 1:dummy.num){
   forktrt=(tmp.data$TREAT==1) 
   forkcon=(tmp.data$TREAT==0) 
   if(sum(forktrt)!=0 & sum(forkcon)!=0){
-    tmp.reg = glm(formula_PS_noregion, data = tmp.data, family=binomial(link="logit"))
+    tmp.reg = glmer(formula_PS_noregion, data = tmp.data, family=binomial(link="logit"))
     ps=predict(tmp.reg)
     ps=exp(ps)/(1+exp(ps))
     group.ps[subdat$dummy == d] = ps
