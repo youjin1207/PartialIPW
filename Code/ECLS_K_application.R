@@ -188,6 +188,7 @@ dummy.num = 10 # the number of groups
 ate.group = w.group = rep(NA, dummy.num)
 group.ps = rep(NA, nrow(subdat)) # partially pooled propensity scores
 ate.group = sesq.group.group = rep(NA, dummy.num) 
+ate.cluster.h = sesq.group.cluster = w.cluster.h = rep(NA, length(table(subdat$S2_ID)))
 for(d in 1:dummy.num){
   tmp.data = subdat[subdat$dummy == d, ]
   forktrt=(tmp.data$TREAT==1) # index of treated individual within cluster
@@ -205,9 +206,32 @@ for(d in 1:dummy.num){
                                                       sum((1/(1-ps[forkcon]))^2)/(sum(1/(1-ps[forkcon])))^2)
     } 
   }
+
+  tmp.data$group.ps = ps
+
+  # for each cluster in the group
+  for(k in which(unique(subdat$S2_ID) %in% unique(tmp.data$S2_ID)) ){
+    tmp.cluster.data = tmp.data[tmp.data$S2_ID == unique(subdat$S2_ID)[k], ]
+    tmp.forktrt=(tmp.cluster.data$TREAT==1) # index of treated individual within cluster
+    tmp.forkcon=(tmp.cluster.data$TREAT==0) # index of control individual within cluster
+    y.temp = tmp.cluster.data$C1R4MSCL
+          
+    if(sum(tmp.forktrt)!=0 & sum(tmp.forkcon)!=0) {
+      ## with fully pooled propensity scores   
+      #group.ps = tmp.cluster.data$group.ps
+      ate.cluster.h[k] = sum((1/tmp.cluster.data$group.ps[tmp.forktrt])*y.temp[tmp.forktrt])/sum(1/tmp.cluster.data$group.ps[tmp.forktrt]) -
+        sum((1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))*y.temp[tmp.forkcon])/sum(1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))
+      sesq.group.cluster[k] = var(y.temp)*(sum((1/tmp.cluster.data$group.ps[tmp.forktrt])^2)/(sum(1/tmp.cluster.data$group.ps[tmp.forktrt]))^2+
+                                                sum((1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))^2)/(sum(1/(1-tmp.cluster.data$group.ps[tmp.forkcon])))^2)
+      w.cluster.h[k] = sum(1/tmp.cluster.data$group.ps[tmp.forktrt])+sum(1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))
+          
+    }
+  }
 }
 ate.group.group = sum(ate.group*w.group, na.rm = TRUE)/sum(w.group, na.rm = TRUE)
 se.group.group = sqrt(sum(w.group^2*sesq.group.group, na.rm = TRUE)) / sum(w.group, na.rm = TRUE)
+ate.group.cluster = sum(ate.cluster.h*w.cluster.h, na.rm = TRUE)/sum(w.cluster.h, na.rm = TRUE)       
+se.group.cluster = sqrt(sum(w.cluster.h^2*sesq.group.cluster, na.rm = TRUE)) / sum(w.cluster.h, na.rm = TRUE)
 groupweight = (subdat$TREAT == 1)/group.ps + (subdat$TREAT == 0)/(1-group.ps) 
 groupweight.subdat = svydesign(ids = ~ 1, data = subdat, weights = ~ groupweight)
 
@@ -217,6 +241,7 @@ dummy.num = 10
 ate.group = w.group = rep(NA, dummy.num)
 group.ps = rep(NA, nrow(subdat))
 ate.group = sesq.group.group = rep(NA, dummy.num)
+ate.cluster.h = sesq.group.cluster = w.cluster.h = rep(NA, length(table(subdat$S2_ID)))
 for(d in 1:dummy.num){
   tmp.data = subdat[subdat$dummy == d, ]
   forktrt=(tmp.data$TREAT==1) 
@@ -234,9 +259,31 @@ for(d in 1:dummy.num){
                                                       sum((1/(1-ps[forkcon]))^2)/(sum(1/(1-ps[forkcon])))^2)
     } 
   }
+
+  tmp.data$group.ps = ps
+
+  # for each cluster in the group
+  for(k in which(unique(subdat$S2_ID) %in% unique(tmp.data$S2_ID)) ){
+    tmp.cluster.data = tmp.data[tmp.data$S2_ID == unique(subdat$S2_ID)[k], ]
+    tmp.forktrt=(tmp.cluster.data$TREAT==1) # index of treated individual within cluster
+    tmp.forkcon=(tmp.cluster.data$TREAT==0) # index of control individual within cluster
+    y.temp = tmp.cluster.data$C1R4MSCL
+        
+    if(sum(tmp.forktrt)!=0 & sum(tmp.forkcon)!=0) {
+      ## with fully pooled propensity scores   
+      ate.cluster.h[k] = sum((1/tmp.cluster.data$group.ps[tmp.forktrt])*y.temp[tmp.forktrt])/sum(1/tmp.cluster.data$group.ps[tmp.forktrt]) -
+        sum((1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))*y.temp[tmp.forkcon])/sum(1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))
+      sesq.group.cluster[k] = var(y.temp)*(sum((1/tmp.cluster.data$group.ps[tmp.forktrt])^2)/(sum(1/tmp.cluster.data$group.ps[tmp.forktrt]))^2+
+                                                sum((1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))^2)/(sum(1/(1-tmp.cluster.data$group.ps[tmp.forkcon])))^2)
+      w.cluster.h[k] = sum(1/tmp.cluster.data$group.ps[tmp.forktrt])+sum(1/(1-tmp.cluster.data$group.ps[tmp.forkcon]))
+          
+    }
+  }
 }
 ate.group.group.noregion = sum(ate.group*w.group, na.rm = TRUE)/sum(w.group, na.rm = TRUE)
 se.group.group.noregion = sqrt(sum(w.group^2*sesq.group.group, na.rm = TRUE)) / sum(w.group, na.rm = TRUE)
+ate.group.cluster.noregion = sum(ate.cluster.h*w.cluster.h, na.rm = TRUE)/sum(w.cluster.h, na.rm = TRUE)       
+se.group.cluster.noregion = sqrt(sum(w.cluster.h^2*sesq.group.cluster, na.rm = TRUE)) / sum(w.cluster.h, na.rm = TRUE)
 groupweight.noregion = (subdat$TREAT == 1)/group.ps + (subdat$TREAT == 0)/(1-group.ps) 
 groupweight.subdat.noregion = svydesign(ids = ~ 1, data = subdat, weights = ~ groupweight.noregion)
 
@@ -247,61 +294,76 @@ load("Data/bootresult.RData")
 ate.pooled.pooled.boot.noweight = bootresult$ate.pooled.pooled.boot.noweight
 ate.group.group.boot = bootresult$ate.group.group.boot
 ate.pooled.pooled.boot = bootresult$ate.pooled.pooled.boot
+ate.group.cluster.boot = bootresult$ate.group.cluster.boot
 ate.group.group.boot.noregion = bootresult$ate.group.group.boot.noregion
 ate.pooled.pooled.boot.noregion = bootresult$ate.pooled.pooled.boot.noregion
+ate.group.cluster.boot.noregion = bootresult$ate.group.cluster.boot.noregion
 # calculate empirical confidence intervals
 noweight.ci = c(findL(ate.pooled.pooled.boot.noweight), findU(ate.pooled.pooled.boot.noweight))
 group.ci = c(findL(ate.group.group.boot), findU(ate.group.group.boot))
 pooled.ci = c(findL(ate.pooled.pooled.boot), findU(ate.pooled.pooled.boot))
+group.cluster.ci = c(findL(ate.group.cluster.boot), findU(ate.group.cluster.boot))
 group.noregion.ci = c(findL(ate.group.group.boot.noregion), findU(ate.group.group.boot.noregion))
 pooled.noregion.ci = c(findL(ate.pooled.pooled.boot.noregion), findU(ate.pooled.pooled.boot.noregion))
+group.cluster.noregion.ci = c(findL(ate.group.cluster.boot.noregion), findU(ate.group.cluster.boot.noregion))
 
 ## plot for estimation results
-mat = matrix(NA, 5, 4)
-rownames(mat) = c("Not weighted", "(full, full)", "(group, group)",  "(full, full)", "(group, group)")
+mat = matrix(NA, 7, 4)
+rownames(mat) = c("Not weighted", "(full, full)", "(group, group)", "(group, cluster)",
+                "(full, full)", "(group, group)", "(group, cluster)")
 colnames(mat) = c("Estimate", "SE", "95% CI (bootstrap)", "95% CI (bootstrap)")
 mat[,1] =  c(ate.pooled.pooled.noweight, ate.pooled.pooled,
-             ate.group.group, ate.pooled.pooled.noregion,
-             ate.group.group.noregion)
-mat[,2] = c(se.noweight, se.pooled.pooled, se.group.group, se.pooled.pooled.noregion, se.group.group.noregion)
+             ate.group.group, ate.group.cluster, ate.pooled.pooled.noregion,
+             ate.group.group.noregion, ate.group.cluster.noregion)
+mat[,2] = c(se.noweight, se.pooled.pooled, se.group.group, se.group.cluster,
+ se.pooled.pooled.noregion, se.group.group.noregion, se.group.cluster.noregion)
 mat[1,c(3,4)] = noweight.ci 
 mat[2,c(3,4)] = pooled.ci
 mat[3,c(3,4)] = group.ci
-mat[4,c(3,4)] = pooled.noregion.ci
-mat[5,c(3,4)] = group.noregion.ci
+mat[4,c(3,4)] = group.cluster.ci
+mat[5,c(3,4)] = pooled.noregion.ci
+mat[6,c(3,4)] = group.noregion.ci
+mat[7,c(3,4)] = group.cluster.noregion.ci
 print(xtable(mat, digits = 2))
 tmp.result = c(ate.pooled.pooled.boot.noweight, ate.pooled.pooled.boot,
-               ate.group.group.boot, ate.pooled.pooled.boot.noregion, ate.group.group.boot.noregion)
-types = rep(c("Unweighted effect", "Fully pooled PS", "Partially PS", "Fully pooled PS (without U)", "Fully pooled PS (without U)") , each = 1000)
-types = factor(types, levels = c("Unweighted effect", "Pooled PS", "Group-sourced PS", "Pooled PS (without U)", "Group-sourced PS (without U)"))
+               ate.group.group.boot, ate.group.cluster.boot,
+              ate.pooled.pooled.boot.noregion, ate.group.group.boot.noregion, ate.group.cluster.boot.noregion)
+types = rep(c("Unweighted effect", "(full, full)", "(group, group)",  "(group, cluster)",
+  "(full, full) without U", "(group, group) without U", "(group, cluster) without U") , each = 1000)
+types = factor(types, levels = c("Unweighted effect", "(full, full)", "(group, group)",  "(group, cluster)",
+  "(full, full) without U", "(group, group) without U", "(group, cluster) without U"))
 
 tmp = data.frame(tmp.result = tmp.result, types = types)
-pdf("Figure/results.pdf",  width = 22, height = 10)
-par(mfrow = c(1,1),   mar = c(5,7,5,5),  cex.lab = 3, 
-    cex.main = 3.0, cex.axis = 1.5, tcl = 0.5,  omi = c(0,0.5,0,0))
-plotCI(c(1:5), c(ate.pooled.pooled.noweight, ate.pooled.pooled,
-                 ate.group.group, ate.pooled.pooled.noregion,
-                 ate.group.group.noregion),
-       li = c(noweight.ci[1], pooled.ci[1], group.ci[1], pooled.noregion.ci[1], group.noregion.ci[1]),
-       ui = c(noweight.ci[2], pooled.ci[2], group.ci[2], pooled.noregion.ci[2], group.noregion.ci[2]),
+pdf("Figure/results.pdf",  width = 25, height = 10)
+par(mfrow = c(1,1),   mar = c(7,7,5,5),  cex.lab = 3, 
+    cex.main = 3.0, cex.axis = 1.8, tcl = 0.5,  omi = c(0,0.5,0,0))
+plotCI(c(1:7), c(ate.pooled.pooled.noweight, ate.pooled.pooled,
+                 ate.group.group, ate.group.cluster, ate.pooled.pooled.noregion,
+                 ate.group.group.noregion, ate.group.cluster.noregion),
+       li = c(noweight.ci[1], pooled.ci[1], group.ci[1], group.cluster.ci[1], pooled.noregion.ci[1], group.noregion.ci[1], group.cluster.noregion.ci[1]),
+       ui = c(noweight.ci[2], pooled.ci[2], group.ci[2], group.cluster.ci[2], pooled.noregion.ci[2], group.noregion.ci[2], group.cluster.noregion.ci[2]),
        xlab = "", ylab = "Estimated ATE", 
-       col= c(rep("black",3),rep("dodgerblue",2)),
+       col= c(rep("black",4),rep("dodgerblue",3)),
        main= "", pch = 19, cex= 3,
        mgp = c(5,2,0),
        xaxt='n', yaxt = 'n',  ylim = c(-0.5, 5), lwd = 3,
-       xlim = c(0.5, 5.5))
-text(x = c(1:5)+0.2, y = c(ate.pooled.pooled.noweight, ate.pooled.pooled,
-                           ate.group.group, ate.pooled.pooled.noregion,
-                           ate.group.group.noregion), labels = formatC(c(ate.pooled.pooled.noweight, ate.pooled.pooled,
-                                                                         ate.group.group, ate.pooled.pooled.noregion,
-                                                                         ate.group.group.noregion), format = "f", digits = 2),
+       xlim = c(0.5, 7.5))
+text(x = c(1:7)+0.2, y = c(ate.pooled.pooled.noweight, ate.pooled.pooled,
+                           ate.group.group,  ate.group.cluster, ate.pooled.pooled.noregion,
+                           ate.group.group.noregion, ate.group.cluster.noregion), labels = formatC(c(ate.pooled.pooled.noweight, ate.pooled.pooled,
+                                                                         ate.group.group, ate.group.cluster, ate.pooled.pooled.noregion,
+                                                                         ate.group.group.noregion, ate.group.cluster.noregion), format = "f", digits = 2),
      cex = 2)
 axis(2, at = seq(-2, 5, 1), 
      labels = seq(-2, 5, 1), las = 2,
      col = "black", cex.axis = 2)
-axis(1, at = c(1:5),  labels =  c("Unweighted effect", "Fully pooled PS", "Partially pooled PS", "Fully pooled PS (without U)", "Partially pooled PS (without U)"),
-     col = "black", cex = 1.3)
+axis(1, at = c(1:7),  labels =  c("Unweighted effect", "(full, full)", "(group, group)",  "(group, cluster)",
+  "(full, full)", "(group, group)", "(group, cluster)"),
+     col = "black", cex = 2)
+text(x = 6, y = -1.5, labels = "Without U in the propensity score model", cex = 2, xpd = TRUE,
+  col = "dodgerblue")
 abline(h = 0, col = "red")
+abline(v = 4.5, col = "black", lty = 2, lwd = 2)
 dev.off()
 
 
